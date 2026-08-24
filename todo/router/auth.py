@@ -5,6 +5,8 @@ from passlib.context import CryptContext
 from database import SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
+
 
 router = APIRouter()
 bcrypt_context = CryptContext(schemes=['bcrypt'] , deprecated='auto')
@@ -18,10 +20,18 @@ def get_db():
 
 db_dependency = Annotated[Session , Depends(get_db)]
 
+def authenticate_user(username:str , password:str , db):
+    user = db.query(Users).filter(Users.username==username).first()
+    if not user:
+        return False
+    elif(bcrypt_context.verify(password , user.hashed_password)):
+        return True
+    return False
+
 class User_Request(BaseModel):
-    first_name:str = Field(min_length= 2  , max_length= 20)
-    last_name:str = Field(min_length= 2  , max_length= 20)
-    username:str = Field(min_length=5 , max_length= 20) 
+    first_name:str = Field(min_length= 1  , max_length= 20)
+    last_name:str = Field(min_length= 1  , max_length= 20)
+    username:str = Field(min_length=1 , max_length= 20) 
     email:str
     password:str
     is_active:bool
@@ -42,3 +52,14 @@ async def auth_user(db:db_dependency , user_request:User_Request):
     )
     db.add(create_user_model)
     db.commit()
+
+@router.post("/token")
+async def get_auth_token(form_data:Annotated[OAuth2PasswordRequestForm , Depends() ],db:db_dependency):
+
+    user = authenticate_user(form_data.username , form_data.password , db)
+
+    if user:
+        return "Authenticated"
+    else:
+        return "Failed Authentication"
+        

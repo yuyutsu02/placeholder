@@ -2,4 +2,5 @@ venv
 .venv
 todo/__pycache__
 todoapp.db
-router/__pycache__
+todo/router/__pycache__
+todo/router/__pycache__/auth.cpython-314.pyc
